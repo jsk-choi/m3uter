@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\m3u8tor.props" />
+</Project>

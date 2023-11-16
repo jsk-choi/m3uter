@@ -1,0 +1,122 @@
+﻿@page "/"
+@using System.Net;
+@using System.Text.RegularExpressions;
+
+<PageTitle>m3uter</PageTitle>
+
+<input type="text" @bind-value=ListUrl />
+<button @onclick=@GetIt>get it</button>
+<label>@idx</label>
+
+<div class="container border">
+    <div class="row border">
+        <div class="col-sm border scroll-container">
+            @foreach (var g in ListFull.Select(x => x.grouptitle).Distinct().OrderBy(x => x))
+            {
+                <div class="border p-2" @onclick="() => GroupChannels(g)">
+                    @g
+                </div>
+            }
+        </div>
+        <div class="col-sm border scroll-container">
+            <input type="text" placeholder="Search..." />
+            @foreach (var g in ListByGroup)
+            {
+                <div class="border p-2">
+                    @g.name
+                </div>
+            }
+        </div>
+        <div class="col-sm border scroll-container">
+            <input type="text" placeholder="Search..." />
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    public string lastgroup { get; set; } = null!;
+
+    public string ListUrl { get; set; } = null!;
+    public string ListString { get; set; } = null!;
+    public List<m3item> ListFull { get; set; } = new();
+    public List<m3item> ListByGroup { get; set; } = new();
+
+    public int idx { get; set; }
+
+    async Task GetIt()
+    {
+        ListUrl = "https://tvnow.best/api/list/jsk.choi@gmail.com/394165";
+
+        // ListString = await new HttpClient().GetStringAsync(ListUrl);
+
+        ListString = File.ReadAllText(@"C:\Users\jc\Desktop\livetv.m3u");
+
+
+        var list = ListString.Split(
+            new string[] { "\r\n", "\r", "\n" },
+            StringSplitOptions.None
+        ).ToArray();
+
+
+        // REMOVE EMPTY LINES
+        list = list.Where(x => !string.IsNullOrEmpty(x)).ToArray();
+
+
+        for (int i = 1; i < list.Length; i += 2)
+        {
+            idx = i;
+
+            var item = new m3item();
+
+            var extinf = list[i].Replace("#EXTINF:-1 ", "");
+            var extinfsplit = extinf.Split(',');
+
+            item.name = extinfsplit.Last();
+            item.url = list[i + 1];
+
+            var tvgstr = extinfsplit.First();
+            var tvgs = tvgstr.Split("\" ");
+
+            item.tvgid = KeysValue(tvgs[0]);
+            item.tvgname = KeysValue(tvgs[1]);
+            item.tvgtype = KeysValue(tvgs[2]);
+            item.grouptitle = KeysValue(tvgs[3]);
+            item.tvglogo = KeysValue(tvgs[4]);
+
+            ListFull.Add(item);
+        }
+    }
+
+    void GroupChannels(string group)
+    {
+        ListByGroup = ListFull.Where(x => x.grouptitle == group).OrderBy(x => x.name).ToList();
+    }
+
+    string KeysValue(string str)
+    {
+        var keyval = str.Split("=\"");
+        var val = keyval.Last();
+
+        if (val.EndsWith("\""))
+        {
+            val = val[..^1];
+        }
+
+        return val;
+    }
+
+    public class m3item
+    {
+        public string url { get; set; }
+        public string tvgid { get; set; }
+        public string tvgname { get; set; }
+        public string tvgtype { get; set; }
+        public string grouptitle { get; set; }
+        public string tvglogo { get; set; }
+        public string name { get; set; }
+    }
+
+
+}

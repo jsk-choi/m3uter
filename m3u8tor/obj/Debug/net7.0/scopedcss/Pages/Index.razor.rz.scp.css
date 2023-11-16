@@ -1,0 +1,4 @@
+.scroll-container[b-3ap3urxu3e] {
+    height: calc(100vh - 200px);
+    overflow-y: scroll;
+}
